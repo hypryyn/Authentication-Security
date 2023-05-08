@@ -49,11 +49,12 @@ passport.serializeUser(function (user, done) {
     done(null, user.id);
 });
 
-passport.deserializeUser(function (id, done) {
-    User.findById(id).then(function (err, user) {
-        done(err, user)
-    });
-
+passport.deserializeUser(async function (id, done) {
+    await User.findById(id)
+        .exec()
+        .then((user) => {
+            done(null, user);
+        });
 });
 
 
@@ -67,9 +68,9 @@ passport.use(new GoogleStrategy({
         // console.log(profile);
         User.findOrCreate({
             googleId: profile.id
-          }, function(err, user) {
+        }, function (err, user) {
             return cb(err, user);
-          });
+        });
     }
 ));
 
@@ -77,9 +78,8 @@ app.get("/", function (req, res) {
     res.render("home");
 });
 
-app.get("/auth/google",
-    passport.authenticate('google', { scope: ["profile"] })
-);
+app.get('/auth/google',
+    passport.authenticate('google', { scope: ['profile'] }));
 
 app.get("/auth/google/secrets",
     passport.authenticate("google", { failureRedirect: "/login" }),
@@ -110,30 +110,38 @@ app.get("/secrets", function (req, res) {
 });
 
 app.post("/register", function (req, res) {
-    // Register user
-    User.register({
-        username: req.body.username
-    }, req.body.password, function (err, user) {
-        if (err) {
-            console.log("Error registering user:", err);
-            res.redirect("/register");
-        } else {
-            console.log("User registered successfully");
-            // Authenticate user and create session
-            passport.authenticate("local")(req, res, function () {
-                console.log("User authenticated successfully");
-                res.redirect("/secrets");
-            });
-        }
+    const newUser = new User({
+        email: req.body.email,
+        password: req.body.password
     });
+
+    newUser.save().then(() => {
+        res.render("secrets");
+    }).catch((err) => {
+        console.log(err);
+    })
 });
 
-app.post('/login', passport.authenticate('local', {
-    failureRedirect: '/login'
-}),
-    function (req, res) {
-        res.redirect('/secrets');
-    });
+app.post("/login", function (req, res) {
+    const username = req.body.username;
+    const password = req.body.password;
+
+    User.findOne({ email: username })
+        .then((foundUser) => {
+            if (foundUser) {
+                if (foundUser.password === password) {
+                    res.render("secrets");
+                }
+            }
+        })
+        .catch((error) => {
+            //When there are errors We handle them here
+
+            console.log(err);
+            res.send(400, "Bad Request");
+        });
+
+});
 
 app.get('/logout', function (req, res, next) {
     req.logout(function (err) {
