@@ -3,7 +3,6 @@ const express = require('express');
 const bodyParser = require("body-parser");
 const ejs = require('ejs');
 const mongoose = require('mongoose');
-
 // const bcrypt = require("bcrypt");
 // const saltRounds = 10;
 // const encrypt = require("mongoose-encryption");
@@ -23,7 +22,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(session({
 
     secret: 'The secret code',
-
     resave: false,
     saveUninitialized: true,
     cookie: {}
@@ -38,10 +36,8 @@ mongoose.connect("mongodb://127.0.0.1:27017/userDB")
 const userSchema = new mongoose.Schema({
     email: String,
     password: String,
-
     googleId: String,
     secret: String
-
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -75,8 +71,6 @@ passport.deserializeUser(async function (id, done) {
 //   });
 
 
-
-
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
@@ -89,7 +83,6 @@ passport.use(new GoogleStrategy({
         User.findOrCreate({
             googleId: profile.id
         }, function (err, user) {
-
             return cb(err, user);
         });
     }
@@ -99,11 +92,9 @@ app.get("/", function (req, res) {
     res.render("home");
 });
 
-
 app.get("/auth/google",
     passport.authenticate('google', { scope: ["profile"] })
 );
-
 
 app.get("/auth/google/secrets",
     passport.authenticate("google", { failureRedirect: "/login" }),
@@ -111,22 +102,16 @@ app.get("/auth/google/secrets",
         res.redirect("/secrets");
     }
 );
-// app.get("/login", function(req, res) {
-//
-// });
 
 app.get("/login", function (req, res) {
     res.render("login");
 });
-
-
 
 app.get("/register", function (req, res) {
     res.render("register");
 });
 
 app.get("/secrets", function (req, res) {
-
     User.find({ "secret": { $ne: null } })
         .then(function (foundUsers) {
             res.render("secrets", { usersWithSecrets: foundUsers });
@@ -238,10 +223,6 @@ app.get('/logout', function (req, res, next) {
     });
 
 });
-
-
-
-
 
 
 app.listen(PORT, function () {
