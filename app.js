@@ -58,6 +58,16 @@ passport.deserializeUser(async function (id, done) {
         });
 });
 
+// passport.deserializeUser(async function(id, done) {
+//     try {
+//       const user = await User.findById(id);
+//       done(null, user);
+//     } catch (err) {
+//       done(err, null);
+//     }
+//   });
+
+
 
 passport.use(new GoogleStrategy({
     clientID: process.env.CLIENT_ID,
@@ -169,25 +179,41 @@ app.post("/register", function (req, res) {
 });
 
 app.post("/login", function (req, res) {
-    const username = req.body.username;
-    const password = req.body.password;
-
-    User.findOne({ email: username })
-        .then((foundUser) => {
-            if (foundUser) {
-                if (foundUser.password === password) {
-                    res.render("secrets");
-                }
-            }
-        })
-        .catch((error) => {
-            //When there are errors We handle them here
-
+    const user = new User({
+        username: req.body.username,
+        password: req.body.password
+    });
+    req.login(user, function (err) {
+        if (err) {
             console.log(err);
-            res.send(400, "Bad Request");
-        });
-
+        } else {
+            passport.authenticate("local")(req, res, function () {
+                res.redirect("/secrets");
+            });
+        }
+    })
 });
+
+// app.post("/login", function (req, res) {
+//     const username = req.body.username;
+//     const password = req.body.password;
+
+//     User.findOne({ email: username })
+//         .then((foundUser) => {
+//             if (foundUser) {
+//                 if (foundUser.password === password) {
+//                     res.render("secrets");
+//                 }
+//             }
+//         })
+//         .catch((error) => {
+//             //When there are errors We handle them here
+
+//             console.log(err);
+//             res.send(400, "Bad Request");
+//         });
+
+// });
 
 app.get('/logout', function (req, res, next) {
     req.logout(function (err) {
